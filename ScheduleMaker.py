@@ -57,7 +57,7 @@ class Schedule:
         lectures_per_section = self.course.sections_and_lectures
 
         # Calculate the number of seconds per day, factor in the video speed
-        seconds_per_day = self.course.total_duration_seconds / self.days_until_completion / self.video_speed
+        seconds_per_day = (self.course.total_duration_seconds / self.days_until_completion / self.video_speed) * PAUSING_BUFFER_RATIO if self.pausing_buffer else self.course.total_duration_seconds / self.days_until_completion / self.video_speed
 
         lectures_per_day = {}
         current_day = 1
