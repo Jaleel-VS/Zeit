@@ -28,9 +28,9 @@ python3 zeit.py
 
 ### Screenshots
 
-![Screenshot 1](https://media.discordapp.net/attachments/808679873837137940/1196159083405910138/image.png?ex=65b69cf5&is=65a427f5&hm=c526e51390400792f70aacc4bf48a5e1981f7b16d897dd22e29dac00b5a99e8b&=&format=webp&quality=lossless)
+![Screenshot 1](https://media.discordapp.net/attachments/808679873837137940/1196159083405910138/image.png?ex=65b69cf5&is=65a427f5&hm=c526e51390400792f70aacc4bf48a5e1981f7b16d897dd22e29dac00b5a99e8b&=&format=webp&quality=lossless "user input")
 
-![Screenshot 2](https://media.discordapp.net/attachments/808679873837137940/1196159519735173302/image.png?ex=65b69d5d&is=65a4285d&hm=238c565c5354a0ae5e3e459088b07b0cf9baae003b22cd3d3a8d53ea26fcab9b&=&format=webp&quality=lossless&width=477&height=403)
+![Screenshot 2](https://media.discordapp.net/attachments/702400926270488601/1196164033334751232/image.png?ex=65b6a191&is=65a42c91&hm=1d31aeb5dce9ff59d50d56c79dea5c1df3553971364eec90d3e131fe69877f45&=&format=webp&quality=lossless&width=482&height=403 "ouput")
 
 Follow the prompts, after which you will be presented with a daily schedule of lectures that is saved to a file called `<id>_schedule.txt`.
 
