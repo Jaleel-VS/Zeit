@@ -1,0 +1,4 @@
+enum UdemyURLType {
+    withID,
+    withBaseLink,
+}
