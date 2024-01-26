@@ -2,42 +2,29 @@
   import { Label, Input, Helper } from "flowbite-svelte";
   import { createEventDispatcher } from "svelte";
   import { isValidUrl } from "../util/course-details";
+  import { debounce } from "lodash-es";
 
-  //   const dispatch = createEventDispatcher();
-
+  const dispatch = createEventDispatcher();
   let url: string = "";
-  let esValido: boolean = false;
+  let isValid: boolean = false;
+  let inputColor: 'base' | 'red' | 'green' = 'base';
 
-  let inputColor: string = "";
+  const validateUrl = debounce(() => {
+    isValid = isValidUrl(url);
+    console.log("URL is valid:", isValid);
+    inputColor = isValid ? "green" : (url.length > 0 ? "red" : "base");
+  }, 300); // Debounce time of 300ms
 
-  // Function to validate URL
-  const validateUrl = (): boolean => {
-    const result = isValidUrl(url);
-    console.log("URL is valid:", result);
-    esValido = result;
+  function handleClick() {
+    dispatch("urlChange", url);
+  }
 
-    if (result) {
-      inputColor = "green";
-    } else {
-      inputColor = "red";
-    }
-
-    return result;
-  };
-
-  // Reactive statement to validate URL whenever it changes
-  // $: esValido = validateUrl(url);
-
-  // Notify parent component when the button is clicked
-  //   const handleSearch = () => {
-  //     if (esValido) {
-  //       dispatch("search", { url });
-  //     } else {
-  //       // Optionally handle invalid URL case
-  //       console.error("Invalid URL");
-  //     }
-  //   };
+  $: url, validateUrl();
 </script>
+
+<div class="flex flex-col pr-4">
+  <!-- UI elements here... -->
+</div>
 
 <div class="flex flex-col pr-4">
   <Label for="url-reader" class="text-2xl font-bold text-yellow-200 pb-2"
@@ -46,11 +33,11 @@
   <Input
     id="url-reader"
     bind:value={url}
-    class=""
+    class="w-[500px]"
     color={inputColor}
-    placeholder="https://www.udemy.com/course/learn-flutter-dart-to-build-ios-android-apps/"
+
   />
-  {#if inputColor == ""}{:else if inputColor == "green"}
+  {#if inputColor == "green"}
     <Helper class="mt-2 text-xl" color="green"
       ><span class="font-small">Well done!</span> The URL is valid.</Helper
     >
@@ -61,8 +48,9 @@
   {/if}
 
   <button
-    class="mt-4 bg-yellow-200 hover:bg-yellow-300 text-black font-bold py-2 px-4 rounded cursor-pointer"
-    on:click={validateUrl}
+    class="mt-4 bg-yellow-200 hover:bg-yellow-300 text-black font-bold py-2 px-4 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+    on:click={handleClick}
+    disabled={!isValid}
   >
     Search
   </button>
