@@ -1,14 +1,15 @@
 import { getSchedule } from '$lib/util/helpme';
-import type { PageServerLoad } from '../$types';
+import type { PageServerLoad } from './$types';
 
 export const load = (async () => {
-    const currentDate = new Date();
-    const schedule = getSchedule(
-        1.5,
-        0,
-        currentDate,
+    const schedule = await getSchedule(
+        1,
+        30,
+        new Date(),
         false,
-        1.0
-    )
-    return {};
+        1.0,
+    );
+    return {
+        schedule,
+    };
 }) satisfies PageServerLoad;
