@@ -1,6 +1,6 @@
-// import * as fs from 'fs';
+import * as fs from 'fs';
 
-const fs 
+// const fs 
 
 const QUIZ_QUESTION_LENGTH = 2 // minutes, time to answer a question
 const CODING_EXERCISE_LENGTH = 5
@@ -42,6 +42,7 @@ const getQuesionCount = (questionText: string): number => {
 }
 
 const parseDuration = (duration: string, pattern: RegExp): [number, number] => {
+    console.log(`duration: ${duration}`);
     const match = duration.match(pattern);
 
     if (match === null) {
@@ -64,7 +65,7 @@ const getLectureDurationInSeconds = (duration: string, lectureType: LectureType)
 
     else if (lectureType === LectureType.QUIZ || lectureType === LectureType.CODING_EXERCISE) {
         const questionCount = getQuesionCount(duration);
-        
+
         if (lectureType === LectureType.QUIZ) {
             return questionCount * QUIZ_QUESTION_LENGTH * 60;
         } else {
@@ -95,10 +96,17 @@ const createScheduleOptions = (hoursPerDay: number, daysUntilCompletion: number,
     }
 }
 
+interface Item {
+    id: string,
+    title: string,
+    content_summary: string,
+    icon_class: string
+}
+
 interface Section {
     index: number;
     title: string;
-    items: any[];
+    items: Item[];
 }
 
 const getLectureType = (text: string): LectureType => {
@@ -128,8 +136,7 @@ const getLectureType = (text: string): LectureType => {
 }
 
 
-
-const createLectures = (data: {sections: Section[]}): Lecture[] => {
+const createLectures = (data: { sections: Section[] }): Lecture[] => {
     const lectures: Lecture[] = [];
 
     data.sections.forEach((section) => {
@@ -139,7 +146,7 @@ const createLectures = (data: {sections: Section[]}): Lecture[] => {
                 id: item.id,
                 type: type,
                 title: item.title,
-                durationSeconds: getLectureDurationInSeconds(item.duration, type),
+                durationSeconds: getLectureDurationInSeconds(item.content_summary, type),
                 section: section.title,
             };
 
@@ -150,7 +157,8 @@ const createLectures = (data: {sections: Section[]}): Lecture[] => {
     return lectures;
 }
 
-const buildSchedule = (lectures: Lecture[], options: ScheduleOptions): any => {
+
+const buildSchedule = (lectures: Lecture[], options: ScheduleOptions): Record<string, Lecture[]> => {
     if (options.hoursPerDay > 0) {
         return buildScheduleWithHoursPerDay(lectures, options);
     }
@@ -159,11 +167,11 @@ const buildSchedule = (lectures: Lecture[], options: ScheduleOptions): any => {
 
 }
 
-const buildScheduleWithHoursPerDay = (lectures: Lecture[], options: ScheduleOptions): any => {
+const buildScheduleWithHoursPerDay = (lectures: Lecture[], options: ScheduleOptions): Record<string, Lecture[]> => {
     const secondsPerDay = options.hoursPerDay * 60 * 60;
-    let lecturesPerDay: Record<string, Lecture[]> = {};
+    const lecturesPerDay: Record<string, Lecture[]> = {};
     let currentDay = 1;
-    let date = options.startDate;
+    const date = options.startDate;
     let cummalativeSeconds = 0;
     const formatDay = (day: number, date: Date): string => {
         return `Day ${day} (${date.toDateString()})`;
@@ -186,22 +194,22 @@ const buildScheduleWithHoursPerDay = (lectures: Lecture[], options: ScheduleOpti
         }
 
         lecturesPerDay[formatDay(currentDay, date)].push(lecture);
-    
+
     });
 
     return lecturesPerDay;
 }
 
-const buildScheduleWithDaysUntilCompletion = (lectures: Lecture[], options: ScheduleOptions): any => {
-   const totalSeconds = lectures.reduce((acc, lecture) => {
-         return acc + lecture.durationSeconds;
+const buildScheduleWithDaysUntilCompletion = (lectures: Lecture[], options: ScheduleOptions): Record<string, Lecture[]> => {
+    const totalSeconds = lectures.reduce((acc, lecture) => {
+        return acc + lecture.durationSeconds;
     }, 0);
 
     const secondsPerDay = totalSeconds / options.daysUntilCompletion;
 
-    let lecturesPerDay: Record<string, Lecture[]> = {};
+    const lecturesPerDay: Record<string, Lecture[]> = {};
     let currentDay = 1;
-    let date = options.startDate;
+    const date = options.startDate;
     let cummalativeSeconds = 0;
     const formatDay = (day: number, date: Date): string => {
         return `Day ${day} (${date.toDateString()})`;
@@ -224,11 +232,13 @@ const buildScheduleWithDaysUntilCompletion = (lectures: Lecture[], options: Sche
         }
 
         lecturesPerDay[formatDay(currentDay, date)].push(lecture);
-    
+
     });
+
+    return lecturesPerDay;
 }
 
-const getData = async (): Promise<{sections: Section[]}> => {
+const getData = async (): Promise<{ sections: Section[] }> => {
     const filePath = './dummy.json';
 
     const fileContent = fs.readFileSync(filePath, 'utf8');
@@ -237,13 +247,19 @@ const getData = async (): Promise<{sections: Section[]}> => {
 
     return data;
 }
+export const getSchedule = async (
+    hoursPerDay: number,
+    daysUntilCompletion: number,
+    startDate: Date,
+    pausingBuffer: boolean,
+    videoSpeed: number,
 
-const main = async () => {
+) => {
     const data = await getData();
     const lectures = createLectures(data);
     const options = createScheduleOptions(0, 7, new Date(), true, 1);
     const schedule = buildSchedule(lectures, options);
-    
+
     if (schedule) {
         console.log("Schedule created successfully");
     }
@@ -252,5 +268,3 @@ const main = async () => {
         console.log("Failed to create schedule");
     }
 }
-
-main();
