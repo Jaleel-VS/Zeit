@@ -24,6 +24,7 @@
 		"eslint-plugin-svelte": "^2.35.1",
 		"flowbite": "^2.2.1",
 		"flowbite-svelte": "^0.44.22",
+		"flowbite-svelte-icons": "^1.0.3",
 		"postcss": "^8.4.33",
 		"svelte": "^4.2.7",
 		"svelte-check": "^3.6.0",
