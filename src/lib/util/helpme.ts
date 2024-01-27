@@ -1,7 +1,3 @@
-import * as fs from 'fs';
-
-// const fs 
-
 const QUIZ_QUESTION_LENGTH = 2 // minutes, time to answer a question
 const CODING_EXERCISE_LENGTH = 5
 const PAUSING_BUFFER_RATIO = 1.5 // eg a 10 minute lecture will be scheduled for 15 minutes
@@ -42,7 +38,6 @@ const getQuesionCount = (questionText: string): number => {
 }
 
 const parseDuration = (duration: string, pattern: RegExp): [number, number] => {
-    console.log(`duration: ${duration}`);
     const match = duration.match(pattern);
 
     if (match === null) {
@@ -157,8 +152,12 @@ const createLectures = (data: { sections: Section[] }): Lecture[] => {
     return lectures;
 }
 
+export interface Schedule {
+    titleMessage: string;
+    lecturesPerDay: Record<string, { lectures: Lecture[], done: boolean }>;
+}
 
-const buildSchedule = (lectures: Lecture[], options: ScheduleOptions): Record<string, Lecture[]> => {
+const buildSchedule = (lectures: Lecture[], options: ScheduleOptions): Schedule => {
     if (options.hoursPerDay > 0) {
         return buildScheduleWithHoursPerDay(lectures, options);
     }
@@ -167,16 +166,16 @@ const buildSchedule = (lectures: Lecture[], options: ScheduleOptions): Record<st
 
 }
 
-const buildScheduleWithHoursPerDay = (lectures: Lecture[], options: ScheduleOptions): Record<string, Lecture[]> => {
+const buildScheduleWithHoursPerDay = (lectures: Lecture[], options: ScheduleOptions): Schedule => {
     const secondsPerDay = options.hoursPerDay * 60 * 60;
-    const lecturesPerDay: Record<string, Lecture[]> = {};
+    const lecturesPerDay: Record<string, { lectures: Lecture[], done: boolean }> = {};
     let currentDay = 1;
     const date = options.startDate;
     let cummalativeSeconds = 0;
     const formatDay = (day: number, date: Date): string => {
         return `Day ${day} (${date.toDateString()})`;
     }
-    lecturesPerDay[formatDay(currentDay, date)] = [];
+    lecturesPerDay[formatDay(currentDay, date)] = { lectures: [], done: false };
 
     lectures.forEach((lecture) => {
         let lectureDuration = lecture.durationSeconds / options.videoSpeed;
@@ -190,31 +189,41 @@ const buildScheduleWithHoursPerDay = (lectures: Lecture[], options: ScheduleOpti
             currentDay += 1;
             date.setDate(date.getDate() + 1);
             cummalativeSeconds = 0;
-            lecturesPerDay[formatDay(currentDay, date)] = [];
+            lecturesPerDay[formatDay(currentDay, date)] = { lectures: [], done: false };
         }
 
-        lecturesPerDay[formatDay(currentDay, date)].push(lecture);
+        lecturesPerDay[formatDay(currentDay, date)].lectures.push(lecture);
 
     });
 
-    return lecturesPerDay;
+    let message = 
+    `If you spend ${options.hoursPerDay} hours per day, you will complete the course in ${currentDay} days.`;
+
+    return {
+        titleMessage: message,
+        lecturesPerDay,
+    };
 }
 
-const buildScheduleWithDaysUntilCompletion = (lectures: Lecture[], options: ScheduleOptions): Record<string, Lecture[]> => {
+    
+
+const buildScheduleWithDaysUntilCompletion = (lectures: Lecture[], options: ScheduleOptions): Schedule => {
     const totalSeconds = lectures.reduce((acc, lecture) => {
         return acc + lecture.durationSeconds;
     }, 0);
 
     const secondsPerDay = totalSeconds / options.daysUntilCompletion;
 
-    const lecturesPerDay: Record<string, Lecture[]> = {};
+    const lecturesPerDay: Record<string, { lectures: Lecture[], done: boolean }> = {}; 
     let currentDay = 1;
     const date = options.startDate;
     let cummalativeSeconds = 0;
     const formatDay = (day: number, date: Date): string => {
         return `Day ${day} (${date.toDateString()})`;
     }
-    lecturesPerDay[formatDay(currentDay, date)] = [];
+    
+    lecturesPerDay[formatDay(currentDay, date)] = { lectures: [], done: false };
+    let totalRealSeconds = 0;
 
     lectures.forEach((lecture) => {
         let lectureDuration = lecture.durationSeconds / options.videoSpeed;
@@ -223,30 +232,54 @@ const buildScheduleWithDaysUntilCompletion = (lectures: Lecture[], options: Sche
         }
 
         cummalativeSeconds += lectureDuration;
+        totalRealSeconds += lecture.durationSeconds;
 
         if (cummalativeSeconds > secondsPerDay) {
             currentDay += 1;
             date.setDate(date.getDate() + 1);
             cummalativeSeconds = 0;
-            lecturesPerDay[formatDay(currentDay, date)] = [];
+            lecturesPerDay[formatDay(currentDay, date)] = { lectures: [], done: false };
         }
 
-        lecturesPerDay[formatDay(currentDay, date)].push(lecture);
+        lecturesPerDay[formatDay(currentDay, date)].lectures.push(lecture);
 
     });
 
-    return lecturesPerDay;
+    // should spend x hours and y minutes per day
+    console.log(options.daysUntilCompletion);
+    let message = `If you wish to complete the course in about ${options.daysUntilCompletion} days, you should spend ${Math.floor(totalRealSeconds / 60 / 60 / options.daysUntilCompletion)} hours and ${Math.floor(totalRealSeconds / 60 / options.daysUntilCompletion) % 60} minutes per day.`;
+    return {
+        titleMessage: message,
+        lecturesPerDay,
+    };
 }
 
-const getData = async (): Promise<{ sections: Section[] }> => {
-    const filePath = './dummy.json';
 
-    const fileContent = fs.readFileSync(filePath, 'utf8');
+const getJson = async (courseID: string) => {
+    const endpoint = `https://www.udemy.com/api-2.0/course-landing-components/${courseID}/me/?components=curriculum_context`;
 
-    const data = JSON.parse(fileContent);
+    const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+            'User-Agent': 'python-requests/2.31.0',
+            'Accept-Encoding': 'gzip, deflate',
+            'Accept': '*/*',
+            'Connection': 'keep-alive'
+        },
+        redirect: 'follow',
+    });
 
-    return data;
+    if (response.status !== 200) {
+        return null;
+    }
+
+
+    const data = await response.json();
+
+    return data['curriculum_context']['data'];
+
 }
+
 export const getSchedule = async (
     hoursPerDay: number,
     daysUntilCompletion: number,
@@ -255,9 +288,9 @@ export const getSchedule = async (
     videoSpeed: number,
 
 ) => {
-    const data = await getData();
+    const data = await getJson("5631286");
     const lectures = createLectures(data);
-    const options = createScheduleOptions(0, 7, new Date(), true, 1);
+    const options = createScheduleOptions(hoursPerDay, daysUntilCompletion, startDate, pausingBuffer, videoSpeed);
     const schedule = buildSchedule(lectures, options);
 
     if (schedule) {
@@ -267,4 +300,6 @@ export const getSchedule = async (
     else {
         console.log("Failed to create schedule");
     }
+
+    return schedule;
 }
