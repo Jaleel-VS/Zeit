@@ -27,7 +27,9 @@
 <div class="container">
   <URLInput on:urlChange={handleSearch}></URLInput>
   {#if udemyUrl}
-   <button on:click={obtenDetallesDelCurso}
+   <button on:click={
+    () => obtenDetallesDelCurso()
+   }
    class="mt-4 bg-yellow-200 hover:bg-yellow-300 text-black font-bold py-2 px-4 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
    >Obtener detalles del curso</button>
    {#if courseID}
