@@ -11,5 +11,6 @@ vite.config.ts.timestamp-*
 
 .idea/
 .venv/
+venv/
 __pycache__/
 *_schedule.txt

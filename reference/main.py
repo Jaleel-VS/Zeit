@@ -22,7 +22,7 @@ def get_course_id_and_title(website_url):
     return course_id, course_title
 
 
-def is_valid_url(website_url: str) -> (bool, bool):
+def is_valid_url(website_url: str) -> tuple[bool, bool]:
     # https://www.udemy.com/course-dashboard-redirect/?course_id=1406344
     pattern_with_id = r'https://www.udemy.com/course-dashboard-redirect/\?course_id=\d+'
     # https://www.udemy.com/course/javascript-beginners-complete-tutorial/
